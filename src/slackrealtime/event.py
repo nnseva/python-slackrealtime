@@ -51,9 +51,21 @@ class Unknown(BaseEvent):
 
 class Hello(BaseEvent): pass
 
-class Message(BaseEvent):
+class UserEvent(BaseEvent):
 	def __str__(self):
-		return '<Message: %s: <%s> %s>' % (self.channel, self.user, self.text)
+		return '<%s: <%s> %s>' % (type(self).__name__, self.user, self.userValue())
+	def userValue(self):
+	    return "%s" % self._b
+
+class UserChannelEvent(UserEvent):
+	def userValue(self):
+	    return "%s: %s" % (self.channel, self.userChannelValue())
+	def userChannelValue(self):
+	    return "%s" % self._b
+
+class Message(UserChannelEvent):
+	def userChannelValue(self):
+	    return "%s" % (self.text.encode('utf-8') if isinstance(self.text,unicode) else self.text)
 
 class BaseHistoryChanged(BaseEvent):
 	def __init__(self, body):
@@ -78,8 +90,13 @@ class ImHistoryChanged(BaseHistoryChanged): pass
 class ImMarked(BaseEvent): pass
 class ImOpen(BaseEvent): pass
 
-class PresenceChange(BaseEvent): pass
-class UserChange(BaseEvent): pass
+class PresenceChange(UserEvent):
+	def userValue(self):
+	    return "%s" % self.presence
+class UserChange(UserEvent): pass
+class UserTyping(UserChannelEvent):
+	def userChannelValue(self):
+	    return ""
 class TeamPrefChange(BaseEvent): pass
 
 EVENT_HANDLERS = {
@@ -103,6 +120,7 @@ EVENT_HANDLERS = {
 
 	u'presence_change': PresenceChange,
 	u'user_change': UserChange,
+	u'user_typing': UserTyping,
 	u'team_pref_change': TeamPrefChange,
 }
 
