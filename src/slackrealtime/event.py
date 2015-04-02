@@ -129,9 +129,10 @@ def decode_event(event):
 	if 'type' not in event:
 		# This is an acknowledgement of a previous command.
 		return Ack(event)
-	elif event['type'] in EVENT_HANDLERS:
-		t = event['type']
-		return EVENT_HANDLERS[t](event)
+	t = event['type']
+	if 'subtype' in event:
+	    t = t + '.' + event['subtype']
+	if t in EVENT_HANDLERS:
+	    return EVENT_HANDLERS[t](event)
 	else:
-		return Unknown(event)
-
+	    return Unknown(event)
