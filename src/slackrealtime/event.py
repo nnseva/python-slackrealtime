@@ -43,29 +43,37 @@ class BaseEvent(object):
 	def copy(self):
 		return decode_event(self._b)
 
-
-class Unknown(BaseEvent):
 	def __str__(self):
-		return '<Unknown: @%r %r>' % (self.ts, self._b)
+		return '<%s %s: %s>' % (self.ts,type(self).__name__, self.messageValue())
 
+	def messageValue(self):
+	    return "%r" % self._b
+
+class Unknown(BaseEvent): pass
 
 class Hello(BaseEvent): pass
 
 class UserEvent(BaseEvent):
-	def __str__(self):
-		return '<%s: <%s> %s>' % (type(self).__name__, self.user, self.userValue())
+	def messageValue(self):
+		return '<%s> %s' % (self.user, self.userValue())
 	def userValue(self):
-	    return "%s" % self._b
+	    return "%r" % self._b
 
 class UserChannelEvent(UserEvent):
 	def userValue(self):
 	    return "%s: %s" % (self.channel, self.userChannelValue())
 	def userChannelValue(self):
-	    return "%s" % self._b
+	    return "%r" % self._b
 
 class Message(UserChannelEvent):
 	def userChannelValue(self):
-	    return "%s" % (self.text.encode('utf-8') if isinstance(self.text,unicode) else self.text)
+	    return "%r" % self.text
+
+class MessageChanged(BaseEvent):
+	def messageValue(self):
+	    return "<%s x %s> %s: %s" % (self.message['edited']['user'],self.message['user'],self.channel,self.userChannelValue())
+	def userChannelValue(self):
+	    return "%r" % self.message['text']
 
 class BaseHistoryChanged(BaseEvent):
 	def __init__(self, body):
@@ -102,6 +110,7 @@ class TeamPrefChange(BaseEvent): pass
 EVENT_HANDLERS = {
 	u'hello': Hello,
 	u'message': Message,
+	u'message.message_changed': MessageChanged, # to have a sample of subtyped message
 	u'channel_archive': ChannelArchive,
 	u'channel_created': ChannelCreated,
 	u'channel_deleted': ChannelDeleted,
